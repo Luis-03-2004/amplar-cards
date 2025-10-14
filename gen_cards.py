@@ -15,7 +15,9 @@ def wrap_text(card_img, text, font, offset, width=53):
     lines = textwrap.wrap(text, width=width)
     x_text, y_text = offset
     for line in lines:
-        width, height = font.getsize(line)
+        #width, height = font.getsize(line)
+        bbox = font.getbbox(line)
+        width, height = bbox[2], bbox[3]
         card_img.text((x_text, y_text), line, (0, 0, 0), font=font)
         y_text += height
 
@@ -30,8 +32,8 @@ def generate_card(template_file, pictures_folder, nome, nome_pop, nome_cien, lat
 
     template = Image.open(template_file)
     card_img = ImageDraw.Draw(template)
-    font = ImageFont.truetype("liberation2/LiberationMono-Regular.ttf", 12)
-    font_header = ImageFont.truetype("liberation2/LiberationMono-Regular.ttf", 10)
+    font = ImageFont.truetype("liberation2/LiberationMono-Regular.ttf", 10)
+    font_header = ImageFont.truetype("liberation2/LiberationMono-Regular.ttf", 8)
     foto_path = os.path.join(pictures_folder, foto)
     if (not os.path.isfile(foto_path)):
         print(f"ERROR: foto {foto_path} doesn't exist")
@@ -51,6 +53,8 @@ def generate_card(template_file, pictures_folder, nome, nome_pop, nome_cien, lat
     wrap_text(card_img, "Coordenadas:", font_header, (right_margin, 3+inicial_line + 4*line_height))
     if (convert_to_utm):
         lat, long = convert_coord_to_utm(lat, long)
+        lat = round(lat, 2)
+        long = round(long, 2)
     coord = f"Long {lat}; Lat {long}"
     wrap_text(card_img, "    " + coord, font, (right_margin, inicial_line + 5*line_height))
 
@@ -79,7 +83,7 @@ def main():
                     choices=['"', "'"]
                 ),
     inquirer.List('template',
-                    message="Selecione o arquivo csv",
+                    message="Selecione o arquivo template",
                     choices=image_files,
                     default="template.png"
                 ),

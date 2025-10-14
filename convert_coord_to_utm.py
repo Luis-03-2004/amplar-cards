@@ -67,8 +67,11 @@ def main():
         writer = csv.writer(file_csv, delimiter=q_files["delimiter"], quotechar=q_files["quotechar"])
         writer.writerow(header)
         for row in reader:
-            lat = row[lat_index]
-            long = row[long_index]
+            if lat_index == long_index:
+                lat, long = row[lat_index].split(",")
+            else:
+                lat = row[lat_index]
+                long = row[long_index]
 
             if lat and long:
                 lat = float(lat.replace(".", ""))/1000000
@@ -76,7 +79,8 @@ def main():
                 print(lat, long)
                 lat, long = convert_coord_to_utm(lat, long)
                 row[lat_index] = lat
-                row[long_index] = long
+                row.append(long)
+                #row[long_index+1] = long
 
             writer.writerow(row)
 
