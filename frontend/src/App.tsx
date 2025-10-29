@@ -2,8 +2,8 @@ import { useState } from 'react'
 import './App.css'
 
 interface UTMResult {
-  utm_y: number
-  utm_x: number
+  utm_y: number | string
+  utm_x: number | string
 }
 
 function App() {
@@ -53,7 +53,11 @@ function App() {
 
     // Formata como "utm_y utm_x" por linha
     const formattedText = results
-      .map(result => `${result.utm_y.toFixed(2)} ${result.utm_x.toFixed(2)}`)
+      .map(result => {
+        const y = typeof result.utm_y === 'number' ? result.utm_y.toFixed(2) : String(result.utm_y)
+        const x = typeof result.utm_x === 'number' ? result.utm_x.toFixed(2) : String(result.utm_x)
+        return `${y} ${x}`
+      })
       .join('\n')
 
     try {
@@ -122,8 +126,8 @@ function App() {
                 <tbody>
                   {results.map((result, index) => (
                     <tr key={index}>
-                      <td>{result.utm_y.toFixed(2)}</td>
-                      <td>{result.utm_x.toFixed(2)}</td>
+                      <td>{typeof result.utm_y === 'number' ? result.utm_y.toFixed(2) : String(result.utm_y)}</td>
+                      <td>{typeof result.utm_x === 'number' ? result.utm_x.toFixed(2) : String(result.utm_x)}</td>
                     </tr>
                   ))}
                 </tbody>

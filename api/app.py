@@ -21,12 +21,15 @@ def convert_coord_to_utm(lat, long):
 
 def parse_and_validate_coordinates(raw_text):
     """
-    Recebe um texto bruto com possivelmente múltiplas linhas contendo coordenadas.
-    Cada linha deve conter exatamente dois números (latitude e longitude), separados por espaço(s).
-    Retorna uma lista de pares (lat, lon) como floats, somente das linhas válidas.
+    Recebe texto livre de coordenadas (uma por linha).
+    Regras:
+      - 2 números: considera válido e retorna (lat: float, lon: float)
+      - >2 itens numéricos: marca erro explícito retornando ("erro", "erro")
+      - outros casos: ignora a linha
+    Retorna uma lista com tuplas (lat, lon), podendo conter strings "erro".
     """
     raw_lines = raw_text.splitlines()
-    valid_coordinates = []
+    coordinates = []
 
     for raw_line in raw_lines:
         cleaned = raw_line.strip()
@@ -34,18 +37,25 @@ def parse_and_validate_coordinates(raw_text):
             continue
 
         parts = cleaned.split()
+
+        # Mais de dois tokens: acusa erro
+        if len(parts) > 2:
+            coordinates.append(("erro", "erro"))
+            continue
+
+        # Diferente de dois tokens: ignora
         if len(parts) != 2:
             continue
 
         try:
             lat = float(parts[0])
             lon = float(parts[1])
+            coordinates.append((lat, lon))
         except ValueError:
+            # tokens não numéricos: ignora
             continue
 
-        valid_coordinates.append((lat, lon))
-
-    return valid_coordinates
+    return coordinates
 
 
 @app.get("/health")
@@ -73,13 +83,12 @@ def convert():
     # Converte para UTM
     results = []
     for lat, lon in coordinates:
+        if lat == "erro" and lon == "erro":
+            results.append({"utm_y": "erro", "utm_x": "erro"})
+            continue
+
         utm_y, utm_x = convert_coord_to_utm(lat, lon)
-        results.append({
-            #"latitude": lat,
-            #"longitude": lon,
-            "utm_y": utm_y,
-            "utm_x": utm_x,
-        })
+        results.append({"utm_y": utm_y, "utm_x": utm_x})
 
     if output_format == "csv":
         # Gera CSV em memória
