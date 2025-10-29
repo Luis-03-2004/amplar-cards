@@ -4,6 +4,37 @@
   padding: 20px;
 }
 
+.header {
+  background: rgba(255,255,255,0.9);
+  border-radius: 10px;
+  margin: 0 auto 16px;
+  max-width: 1200px;
+}
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+}
+.brand {
+  font-weight: 800;
+  color: #0c5f2e;
+}
+.nav {
+  display: flex;
+  gap: 12px;
+}
+.nav-link {
+  color: #0c5f2e;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+.nav-link.active, .nav-link:hover {
+  background: #e5f6ea;
+}
+
 .container {
   width: 100%;
   max-width: 1200px;
