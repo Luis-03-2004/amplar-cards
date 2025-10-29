@@ -4,3 +4,4 @@ pillow
 utm
 inquirer
 flask
+flask-cors
