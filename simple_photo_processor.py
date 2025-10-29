@@ -133,18 +133,17 @@ def process_photos(input_folder, output_folder, landscape_templates, portrait_te
 
 def main():
     # Configurações
-    input_folder = "Images/Amparo"
-    output_folder = "Images/fotos_processadas"
+    input_folder = "Images\Amparo"
+    output_folder = "Images\fotos_processadas"
     
     # Lista de templates landscape (adicione quantos quiser)
     landscape_templates = [
-        "Refloresta_landscape(1600x1200).png",
-        "Refloresta_landscape(4000x1848).png",
-        "Refloresta_landscape(4624x2084).png",
+        "Refloresta  (3672 x 2066 px).png",
+        "Refloresta (1600 x 721 px).png"
         # Adicione mais templates landscape aqui conforme necessário
     ]
     
-    portrait_template = "Refloresta_portrait(1848x4000).png"
+    portrait_template = "Refloresta (3024 x 4032 px).png"
     
     # Verificar se os arquivos existem
     if not os.path.exists(input_folder):
