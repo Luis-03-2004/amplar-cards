@@ -1,0 +1,171 @@
+.app {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #47b367 0%, #117011 100%);
+  padding: 20px;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+h1 {
+  color: #333;
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 2em;
+}
+
+h2 {
+  color: #555;
+  margin-top: 30px;
+  margin-bottom: 15px;
+  font-size: 1.5em;
+}
+
+.input-section {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 10px;
+  color: #555;
+  font-weight: 500;
+}
+
+textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  resize: vertical;
+  box-sizing: border-box;
+  background-color: #333;
+  color: #fff;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: #38c744;
+}
+
+.buttons {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #0e9455;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #2dad3e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.error {
+  background: #fee;
+  border: 2px solid #fcc;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  color: #c33;
+}
+
+.results {
+  margin-top: 30px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.results-header h2 {
+  margin: 0;
+}
+
+.btn-copy {
+  background: #0c9244;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn-copy:hover {
+  background: #0a7a38;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(12, 146, 68, 0.4);
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+thead {
+  background: #0c9244;
+  color: white;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+}
+
+td {
+  color: #333;
+}
+
+tbody tr:nth-child(even) {
+  background: #f8f9fa;
+}
+
+tbody tr:hover {
+  background: #e9ecef;
+}
