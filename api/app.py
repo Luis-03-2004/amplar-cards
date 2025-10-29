@@ -1,10 +1,12 @@
 from flask import Flask, request, jsonify, Response
+from flask_cors import CORS
 import csv
 import io
 import utm
 
 
 app = Flask(__name__)
+CORS(app)  # Permite requisições do frontend
 
 
 def convert_coord_to_utm(lat, long):
