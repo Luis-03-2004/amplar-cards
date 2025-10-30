@@ -1,8 +1,10 @@
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response, send_file
 from flask_cors import CORS
 import csv
 import io
 import utm
+import zipfile
+from PIL import Image, ImageOps
 
 
 app = Flask(__name__)
@@ -103,6 +105,152 @@ def convert():
 
     # Padrão: JSON
     return jsonify({"items": results, "count": len(results)})
+
+
+def get_image_orientation(image: Image.Image):
+    width, height = image.size
+    return 'landscape' if width > height else 'portrait'
+
+def find_closest_template_by_area(photo_width: int, photo_height: int, templates: list[Image.Image]):
+    photo_area = photo_width * photo_height
+    best_index = None
+    min_difference = float('inf')
+
+    for idx, template in enumerate(templates):
+        try:
+            template_width, template_height = template.size
+            template_area = template_width * template_height
+            area_difference = abs(template_area - photo_area) / max(photo_area, 1)
+            if area_difference < min_difference:
+                min_difference = area_difference
+                best_index = idx
+        except Exception:
+            continue
+    return best_index
+
+
+def process_single_photo(src_image_bytes: bytes, landscape_templates: list[Image.Image], portrait_templates: list[Image.Image]):
+    """Retorna bytes PNG processados conforme regras do simple_photo_processor."""
+    photo = Image.open(io.BytesIO(src_image_bytes))
+    photo = ImageOps.exif_transpose(photo)
+    photo_width, photo_height = photo.size
+
+    orientation = get_image_orientation(photo)
+
+    # Seleção de template
+    template_img = None
+    if orientation == 'landscape' and landscape_templates:
+        idx = find_closest_template_by_area(photo_width, photo_height, landscape_templates)
+        if idx is not None:
+            template_img = landscape_templates[idx]
+    elif orientation == 'portrait':
+        if portrait_templates:
+            idx = find_closest_template_by_area(photo_width, photo_height, portrait_templates)
+            if idx is not None:
+                template_img = portrait_templates[idx]
+    if template_img is None:
+        raise ValueError('Nenhum template válido fornecido')
+
+    # Trabalhar com cópias para não alterar imagens originais
+    template = template_img.copy().convert('RGBA')
+    template_width, template_height = template.size
+
+    # Redimensionar foto para ocupar 100% do template
+    scale_factor = max(template_width / photo_width, template_height / photo_height)
+    new_width = int(photo_width * scale_factor)
+    new_height = int(photo_height * scale_factor)
+    resized_photo = photo.resize((new_width, new_height), Image.Resampling.LANCZOS).convert('RGBA')
+
+    x_offset = (template_width - new_width) // 2
+    y_offset = (template_height - new_height) // 2
+
+    final_image = Image.new('RGBA', (template_width, template_height))
+    final_image.paste(resized_photo, (x_offset, y_offset))
+    final_image.paste(template, (0, 0), template)
+
+    out_buf = io.BytesIO()
+    final_image.convert('RGBA').save(out_buf, format='PNG')
+    out_buf.seek(0)
+    return out_buf.read()
+
+
+@app.post('/images/process')
+def process_images():
+    """
+    multipart/form-data esperado:
+      - templates_landscape: múltiplos arquivos PNG (opcional, 0..N)
+      - templates_portrait: múltiplos arquivos PNG (opcional, 0..N)
+      - images_zip: um arquivo ZIP contendo JPG/PNG (opcional)
+      - images: múltiplos arquivos (JPG/PNG) (opcional)
+
+    É necessário ao menos um template (portrait ou landscape).
+    As imagens podem vir via ZIP ou múltiplos arquivos. Se ambos vierem, são somadas.
+    Retorna: application/zip com arquivos processados no padrão <nome>_processed.png
+    """
+    # Carregar templates landscape
+    landscape_files = request.files.getlist('templates_landscape')
+    landscape_templates: list[Image.Image] = []
+    for f in landscape_files:
+        try:
+            img = Image.open(f.stream).convert('RGBA')
+            landscape_templates.append(img)
+        except Exception:
+            continue
+
+    # Carregar templates portrait
+    portrait_files = request.files.getlist('templates_portrait')
+    portrait_templates: list[Image.Image] = []
+    for f in portrait_files:
+        try:
+            img = Image.open(f.stream).convert('RGBA')
+            portrait_templates.append(img)
+        except Exception:
+            continue    
+
+    if not landscape_templates and not portrait_templates:
+        return jsonify({"error": "Envie ao menos um template: landscape (templates_landscape) ou retrato (templates_portrait)"}), 400
+
+    # Coletar imagens
+    images_bytes: list[tuple[str, bytes]] = []
+
+    # ZIP
+    zip_storage = request.files.get('images_zip')
+    if zip_storage:
+        try:
+            zip_buf = io.BytesIO(zip_storage.read())
+            with zipfile.ZipFile(zip_buf, 'r') as zf:
+                for name in zf.namelist():
+                    if name.lower().endswith(('.jpg', '.jpeg', '.png')):
+                        with zf.open(name) as f:
+                            images_bytes.append((name, f.read()))
+        except Exception as e:
+            return jsonify({"error": f"Falha ao ler ZIP: {e}"}), 400
+
+    # Arquivos soltos
+    for f in request.files.getlist('images'):
+        try:
+            images_bytes.append((f.filename or 'image.jpg', f.read()))
+        except Exception:
+            continue
+
+    if not images_bytes:
+        return jsonify({"error": "Nenhuma imagem enviada. Use 'images_zip' (ZIP) ou 'images' (arquivos)."}), 400
+
+    # Processar e montar ZIP de saída em memória
+    out_zip_buf = io.BytesIO()
+    with zipfile.ZipFile(out_zip_buf, 'w', compression=zipfile.ZIP_DEFLATED) as out_zip:
+        for name, data in images_bytes:
+            base = name.rsplit('/', 1)[-1].rsplit('\\', 1)[-1]
+            base_no_ext = base.rsplit('.', 1)[0]
+            try:
+                processed = process_single_photo(data, landscape_templates, portrait_templates)
+                out_zip.writestr(f"{base_no_ext}_processed.png", processed)
+            except Exception as e:
+                # Em caso de erro por imagem, adiciona um .txt com o erro
+                out_zip.writestr(f"{base_no_ext}_ERROR.txt", str(e))
+
+    out_zip_buf.seek(0)
+    return send_file(out_zip_buf, mimetype='application/zip', as_attachment=True, download_name='processed_images.zip')
 
 
 if __name__ == "__main__":
